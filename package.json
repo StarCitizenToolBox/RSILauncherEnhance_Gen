@@ -1,0 +1,15 @@
+{
+  "name": "rsi-launcher-enhance-gen",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "prepare-agent": "node scripts/prepare-agent.js",
+    "finalize-agent": "node scripts/finalize-agent.js",
+    "verify-final": "node scripts/finalize-agent.js --input ../RSILauncherEnhance/main.js --check-only"
+  },
+  "dependencies": {
+    "@electron/asar": "^3.4.1",
+    "prettier": "^3.7.4"
+  }
+}
