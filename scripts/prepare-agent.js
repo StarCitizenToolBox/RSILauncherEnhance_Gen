@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const asar = require("@electron/asar");
 const prettier = require("prettier");
 
 const {
@@ -11,9 +10,14 @@ const {
   mainHashFromPath,
 } = require("./common");
 
-function extractFile(asarPath, mainPath) {
+function extractFile(asar, asarPath, mainPath) {
   const windowsPath = mainPath.normalized.replace(/\//g, "\\");
-  const attempts = [mainPath.rawPath, mainPath.normalized, windowsPath, `/${mainPath.normalized}`];
+  const attempts = [
+    mainPath.rawPath,
+    mainPath.normalized,
+    windowsPath,
+    `/${mainPath.normalized}`,
+  ];
   let lastError;
   for (const attempt of attempts) {
     try {
@@ -26,6 +30,7 @@ function extractFile(asarPath, mainPath) {
 }
 
 async function main() {
+  const asar = await import("@electron/asar");
   const args = parseArgs(process.argv.slice(2));
   const asarPath = args.asar || path.join("source", "app.asar");
   const workDir = args.workdir || "work";
@@ -35,7 +40,7 @@ async function main() {
 
   const packagePaths = asar.listPackage(asarPath);
   const mainPath = findLauncherMainPath(packagePaths);
-  const rawMain = extractFile(asarPath, mainPath).toString("utf8");
+  const rawMain = extractFile(asar, asarPath, mainPath).toString("utf8");
   const prettyMain = await prettier.format(rawMain, {
     parser: "babel",
     printWidth: 120,

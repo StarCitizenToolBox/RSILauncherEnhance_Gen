@@ -19,6 +19,13 @@ Use the repository scripts as the workflow boundary. Do not install or uninstall
 
 Run from `P:/StarCitizen/RSILauncherEnhance_Gen`.
 
+Run the complete automatic workflow, starting from the official RSI launcher download:
+
+```powershell
+npm install
+npm run generate
+```
+
 Prepare readable JS:
 
 ```powershell
@@ -37,7 +44,8 @@ npm run verify-final
 
 - `work/raw_main.js`: compressed JS extracted from `source/app.asar`; do not edit.
 - `work/main.js`: Prettier-formatted JS; edit this file.
-- `work/meta.json`: extracted asar path, main script path, and version hash.
+- `work/meta.json`: extracted asar path, actual launcher UI bundle path (which can be
+  `index.<hash>.js` or `main.<hash>.js`), and version hash.
 - `source/zh_CN_map.js`: Simplified Chinese localization map.
 - `source/zh_TW_map.js`: Traditional Chinese localization map.
 - `../RSILauncherEnhance/main.js`: historical patched output and final destination.
@@ -80,7 +88,10 @@ const SC_TOOLBOX_ENABLED_LOCALIZATION = "en";
 const SC_TOOLBOX_ENABLE_DOWNLOADER_BOOST = false;
 ```
 
-2. Replace launcher default language config so `defaultLanguage.code` uses `SC_TOOLBOX_ENABLED_LOCALIZATION`.
+2. If the launcher bundle has a `defaultLanguage` config, replace
+   `defaultLanguage.code` with `SC_TOOLBOX_ENABLED_LOCALIZATION`. Current `index.*.js`
+   bundles no longer have that config, so the i18n `lng` replacement in step 5 is
+   the required language initialization patch.
 
 3. Insert `SC_TOOLBOX_LOCALIZATION_ZHCN_MAP` and `SC_TOOLBOX_LOCALIZATION_ZHTW_MAP` from `source/zh_CN_map.js` and `source/zh_TW_map.js` before the i18n resources object.
 
