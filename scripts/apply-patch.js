@@ -402,6 +402,7 @@ module.exports = {
   extractEnglishResources,
   fillMissingValues,
   findMatchingDelimiter,
+  loadTranslationMap,
   objectLiteralFromMapSource,
   patchLanguageMethods,
   patchTransferOptions,

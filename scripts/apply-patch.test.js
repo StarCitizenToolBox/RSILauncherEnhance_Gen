@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
+const path = require("node:path");
 const test = require("node:test");
 
 const {
   extractEnglishResources,
   fillMissingValues,
+  loadTranslationMap,
   patchLanguageMethods,
   patchTransferOptions,
 } = require("./apply-patch");
@@ -35,6 +37,39 @@ test("fills only missing translation fields", () => {
     settings: { title: "设置", subtitle: "Application settings" },
     tray: { quit: "Quit" },
   });
+});
+
+test("keeps the current launcher guide and notification terms localized", () => {
+  const zhCn = loadTranslationMap(
+    path.join(__dirname, "..", "source", "zh_CN_map.js"),
+    "SC_TOOLBOX_LOCALIZATION_ZHCN_MAP",
+  );
+  const zhTw = loadTranslationMap(
+    path.join(__dirname, "..", "source", "zh_TW_map.js"),
+    "SC_TOOLBOX_LOCALIZATION_ZHTW_MAP",
+  );
+
+  assert.equal(zhCn.accountPanel.account_panel_presence_dnd, "勿扰");
+  assert.equal(zhCn.guide.guide_hub_find_title, "寻找一位向导");
+  assert.equal(
+    zhCn.guide.guide_request_accepted_toast,
+    "{{name}} 接受了你的指导请求！",
+  );
+  assert.equal(
+    zhCn.settingsPage.settings_notifications_display_desktop_description,
+    "以标准系统桌面通知的形式显示",
+  );
+
+  assert.equal(zhTw.accountPanel.account_panel_presence_dnd, "勿擾");
+  assert.equal(zhTw.guide.guide_hub_find_title, "尋找一位嚮導");
+  assert.equal(
+    zhTw.guide.guide_request_accepted_toast,
+    "{{name}} 接受了您的指導請求！",
+  );
+  assert.equal(
+    zhTw.settingsPage.settings_notifications_display_desktop_description,
+    "以標準系統桌面通知的形式顯示",
+  );
 });
 
 test("wraps only the known stock transfer options", () => {
