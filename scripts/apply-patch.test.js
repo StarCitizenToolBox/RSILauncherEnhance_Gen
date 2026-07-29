@@ -55,6 +55,13 @@ test("keeps the current launcher guide and notification terms localized", () => 
     zhCn.guide.guide_request_accepted_toast,
     "{{name}} 接受了你的指导请求！",
   );
+  assert.equal(zhCn.guide.guide_availability_available, "提供指导");
+  assert.equal(zhCn.guide.guide_availability_unavailable, "暂不提供指导");
+  assert.equal(
+    zhCn.guide.guide_chat_private_message_notice,
+    "这是一个由向导系统发起的私信会话",
+  );
+  assert.equal(zhCn.guide.guide_chat_duration_label, "时长");
   assert.equal(
     zhCn.settingsPage.settings_notifications_display_desktop_description,
     "以标准系统桌面通知的形式显示",
@@ -66,6 +73,13 @@ test("keeps the current launcher guide and notification terms localized", () => 
     zhTw.guide.guide_request_accepted_toast,
     "{{name}} 接受了您的指導請求！",
   );
+  assert.equal(zhTw.guide.guide_availability_available, "提供指導");
+  assert.equal(zhTw.guide.guide_availability_unavailable, "暫不提供指導");
+  assert.equal(
+    zhTw.guide.guide_chat_private_message_notice,
+    "這是一個由嚮導系統發起的私人訊息對話",
+  );
+  assert.equal(zhTw.guide.guide_chat_duration_label, "時長");
   assert.equal(
     zhTw.settingsPage.settings_notifications_display_desktop_description,
     "以標準系統桌面通知的形式顯示",
