@@ -1,10 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 
-const OLD_MAIN_JS_PREFIX = "app/static/js/main.";
-const NEW_MAIN_JS_PREFIX = "app/launcher/static/js/main.";
+const LAUNCHER_INDEX_JS_PREFIX = "app/launcher/static/js/index.";
+const LAUNCHER_MAIN_JS_PREFIX = "app/launcher/static/js/main.";
+const LEGACY_MAIN_JS_PREFIX = "app/static/js/main.";
 const MAIN_JS_SUFFIX = ".js";
-const MAIN_JS_PREFIXES = [OLD_MAIN_JS_PREFIX, NEW_MAIN_JS_PREFIX];
+const MAIN_JS_PREFIXES = [
+  LAUNCHER_INDEX_JS_PREFIX,
+  LAUNCHER_MAIN_JS_PREFIX,
+  LEGACY_MAIN_JS_PREFIX,
+];
 
 function parseArgs(argv) {
   const args = {};
@@ -33,7 +38,8 @@ function findLauncherMainPath(paths) {
   for (const rawPath of paths) {
     const normalized = normalizeAsarPath(rawPath);
     const priority = MAIN_JS_PREFIXES.findIndex(
-      (prefix) => normalized.startsWith(prefix) && normalized.endsWith(MAIN_JS_SUFFIX),
+      (prefix) =>
+        normalized.startsWith(prefix) && normalized.endsWith(MAIN_JS_SUFFIX),
     );
     if (priority !== -1) {
       candidates.push({ rawPath, normalized, priority });
@@ -41,10 +47,15 @@ function findLauncherMainPath(paths) {
   }
 
   if (candidates.length === 0) {
-    throw new Error(`main script not found; supported prefixes: ${MAIN_JS_PREFIXES.join(", ")}`);
+    throw new Error(
+      `main script not found; supported prefixes: ${MAIN_JS_PREFIXES.join(", ")}`,
+    );
   }
 
-  candidates.sort((a, b) => a.priority - b.priority || a.normalized.localeCompare(b.normalized));
+  candidates.sort(
+    (a, b) =>
+      a.priority - b.priority || a.normalized.localeCompare(b.normalized),
+  );
   return candidates[0];
 }
 
@@ -59,7 +70,7 @@ function writeText(filePath, content) {
 
 function mainHashFromPath(mainPath) {
   const fileName = path.posix.basename(normalizeAsarPath(mainPath));
-  const match = /^main\.([^.]+)\.js$/.exec(fileName);
+  const match = /^(?:main|index)\.([^.]+)\.js$/.exec(fileName);
   return match ? match[1] : "unknown";
 }
 

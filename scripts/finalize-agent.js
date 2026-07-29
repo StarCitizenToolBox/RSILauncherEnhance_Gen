@@ -19,13 +19,26 @@ function countMatches(content, pattern) {
 
 function assertBeautified(content) {
   const lines = content.split(/\r?\n/);
-  const maxLineLength = Math.max(...lines.map((line) => line.length));
   if (lines.length < 5000) {
-    throw new Error(`patched main.js does not look beautified; expected at least 5000 lines, found ${lines.length}`);
-  }
-  if (maxLineLength > 100000) {
     throw new Error(
-      `patched main.js still contains a minified/raw line; max line length is ${maxLineLength}`,
+      `patched main.js does not look beautified; expected at least 5000 lines, found ${lines.length}`,
+    );
+  }
+  const unexpectedLongLine = lines.find((line) => {
+    if (line.length <= 100000) return false;
+    let literal = line.trim();
+    literal = literal.replace(/^[A-Za-z_$][\w$]*\s*:\s*/, "");
+    const quote = literal[0];
+    if (quote !== '"' && quote !== "'") return true;
+    return !(
+      literal.endsWith(`${quote},`) ||
+      literal.endsWith(`${quote};`) ||
+      literal.endsWith(quote)
+    );
+  });
+  if (unexpectedLongLine) {
+    throw new Error(
+      `patched main.js still contains a minified/raw line; unexpected line length is ${unexpectedLongLine.length}`,
     );
   }
 }
@@ -34,17 +47,25 @@ function assertSyntax(content, fileName) {
   try {
     new vm.Script(content, { filename: fileName });
   } catch (error) {
-    throw new Error(`patched main.js has invalid JavaScript syntax: ${error.message}`);
+    throw new Error(
+      `patched main.js has invalid JavaScript syntax: ${error.message}`,
+    );
   }
 }
 
 function methodBody(content, methodName) {
-  const marker = `${methodName}(`;
-  const markerIndex = content.indexOf(marker);
-  if (markerIndex === -1) {
+  const methodPattern = new RegExp(
+    `(?:^|\\n)[ \\t]*(?:async\\s+)?${methodName}\\s*\\([^)]*\\)\\s*\\{`,
+    "m",
+  );
+  const methodMatch = methodPattern.exec(content);
+  if (!methodMatch) {
     throw new Error(`missing language method: ${methodName}`);
   }
-  const openBrace = content.indexOf("{", markerIndex);
+  const openBrace = content.indexOf(
+    "{",
+    methodMatch.index + methodMatch[0].length - 1,
+  );
   if (openBrace === -1) {
     throw new Error(`missing language method body: ${methodName}`);
   }
@@ -80,26 +101,39 @@ function assertLanguageSwitchDisabled(content) {
   for (const methodName of ["updateCurrentLanguage", "updatei18nLanguage"]) {
     const body = methodBody(content, methodName);
     if (body.includes("Did not find language in the collection")) {
-      throw new Error(`${methodName} still throws when language is not in collection`);
+      throw new Error(
+        `${methodName} still throws when language is not in collection`,
+      );
     }
-    if (/\bsetCurrentLanguage\s*\(/.test(body) || /\bseti18nLanguage\s*\(/.test(body)) {
+    if (
+      /\bsetCurrentLanguage\s*\(/.test(body) ||
+      /\bseti18nLanguage\s*\(/.test(body)
+    ) {
       throw new Error(`${methodName} still changes launcher language`);
     }
   }
 
   const collectionBody = methodBody(content, "updateLanguageCollection");
   if (collectionBody.includes("Did not find default language")) {
-    throw new Error("updateLanguageCollection still throws when default language is not in collection");
+    throw new Error(
+      "updateLanguageCollection still throws when default language is not in collection",
+    );
   }
-  if (/\bsetCurrentLanguage\s*\(/.test(collectionBody) || /\bseti18nLanguage\s*\(/.test(collectionBody)) {
-    throw new Error("updateLanguageCollection still falls back to built-in language switching");
+  if (
+    /\bsetCurrentLanguage\s*\(/.test(collectionBody) ||
+    /\bseti18nLanguage\s*\(/.test(collectionBody)
+  ) {
+    throw new Error(
+      "updateLanguageCollection still falls back to built-in language switching",
+    );
   }
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const input = args.input || path.join("work", "main.js");
-  const output = args.output || path.join("..", "RSILauncherEnhance", "main.js");
+  const output =
+    args.output || path.join("..", "RSILauncherEnhance", "main.js");
   const checkOnly = Object.prototype.hasOwnProperty.call(args, "check-only");
   const content = readText(input);
 
@@ -107,22 +141,44 @@ function main() {
   assertSyntax(content, input);
   assertLanguageSwitchDisabled(content);
 
-  const missing = REQUIRED_SNIPPETS.filter((snippet) => !content.includes(snippet));
+  const missing = REQUIRED_SNIPPETS.filter(
+    (snippet) => !content.includes(snippet),
+  );
   if (missing.length > 0) {
-    throw new Error(`patched main.js is missing required snippets: ${missing.join(", ")}`);
+    throw new Error(
+      `patched main.js is missing required snippets: ${missing.join(", ")}`,
+    );
   }
 
-  const disabledCount = countMatches(content, /disable(?:d)? by (?:SC_TOOLBOX_ENABLED_LOCALIZATION|SCToolbox)/g);
+  const disabledCount = countMatches(
+    content,
+    /disable(?:d)? by (?:SC_TOOLBOX_ENABLED_LOCALIZATION|SCToolbox)/g,
+  );
   if (disabledCount < 3) {
-    throw new Error(`expected at least 3 language disable comments, found ${disabledCount}`);
+    throw new Error(
+      `expected at least 3 language disable comments, found ${disabledCount}`,
+    );
   }
 
   if (/lng\s*:\s*["']en["']/.test(content)) {
     throw new Error("i18n init still appears to use literal en");
   }
 
-  if (!/defaultLanguage\s*:\s*\{\s*code\s*:\s*SC_TOOLBOX_ENABLED_LOCALIZATION/.test(content)) {
-    throw new Error("defaultLanguage.code is not wired to SC_TOOLBOX_ENABLED_LOCALIZATION");
+  if (!/lng\s*:\s*SC_TOOLBOX_ENABLED_LOCALIZATION/.test(content)) {
+    throw new Error(
+      "i18n init is not wired to SC_TOOLBOX_ENABLED_LOCALIZATION",
+    );
+  }
+
+  if (
+    /defaultLanguage\s*:/.test(content) &&
+    !/defaultLanguage\s*:\s*\{\s*code\s*:\s*SC_TOOLBOX_ENABLED_LOCALIZATION/.test(
+      content,
+    )
+  ) {
+    throw new Error(
+      "defaultLanguage.code is not wired to SC_TOOLBOX_ENABLED_LOCALIZATION",
+    );
   }
 
   if (!checkOnly) {

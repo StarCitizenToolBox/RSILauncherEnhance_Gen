@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
+    "test": "node --test scripts/*.test.js",
+    "generate": "node scripts/generate.js",
     "prepare-agent": "node scripts/prepare-agent.js",
     "finalize-agent": "node scripts/finalize-agent.js",
     "verify-final": "node scripts/finalize-agent.js --input ../RSILauncherEnhance/main.js --check-only"
   },
   "dependencies": {
-    "@electron/asar": "^3.4.1",
+    "@electron/asar": "^4.2.1",
+    "7zip-bin": "^5.2.0",
     "prettier": "^3.7.4"
   }
 }
