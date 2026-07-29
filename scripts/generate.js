@@ -44,6 +44,52 @@ function discoverLauncherDownload(pageContent) {
   return JSON.parse(`"${match[1]}"`);
 }
 
+function discoverLauncherDownloadBaseUrl(pageContent) {
+  const normalized = pageContent.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+  const match = /"launcherDownloadBaseUrl"\s*:\s*"((?:\\.|[^"])*)"/.exec(
+    normalized,
+  );
+  if (!match) {
+    throw new Error(
+      "official RSI download page does not contain launcherDownloadBaseUrl",
+    );
+  }
+  return JSON.parse(`"${match[1]}"`);
+}
+
+function installerUrlFromLatestMetadata(baseUrl, metadata) {
+  const installerPath =
+    typeof metadata?.path === "string"
+      ? metadata.path
+      : metadata?.files?.find((file) => typeof file?.url === "string")?.url;
+  if (!installerPath) {
+    throw new Error("official RSI latest.json does not contain an installer");
+  }
+
+  const normalizedBaseUrl = `${baseUrl.replace(/\/+$/, "")}/`;
+  const installerUrl = new URL(installerPath, normalizedBaseUrl);
+  const base = new URL(normalizedBaseUrl);
+  if (
+    installerUrl.protocol !== "https:" ||
+    installerUrl.origin !== base.origin ||
+    !installerUrl.pathname.startsWith(base.pathname)
+  ) {
+    throw new Error(
+      `official RSI latest.json contains an unsafe installer URL: ${installerUrl}`,
+    );
+  }
+
+  if (
+    typeof metadata.version === "string" &&
+    launcherVersionFromUrl(installerUrl.href) !== metadata.version
+  ) {
+    throw new Error(
+      `official RSI latest.json version mismatch: ${metadata.version}`,
+    );
+  }
+  return installerUrl.href;
+}
+
 function launcherVersionFromUrl(installerUrl) {
   const fileName = decodeURIComponent(
     new URL(installerUrl).pathname.split("/").pop() || "",
@@ -66,9 +112,13 @@ function installerFileNameFromUrl(installerUrl) {
   return fileName;
 }
 
-async function resolveInstallerUrl(downloadPage, explicitInstallerUrl) {
+async function resolveInstallerUrl(
+  downloadPage,
+  explicitInstallerUrl,
+  fetcher = fetchWithRetry,
+) {
   if (explicitInstallerUrl) return explicitInstallerUrl;
-  const response = await fetchWithRetry(downloadPage, {
+  const response = await fetcher(downloadPage, {
     headers: { "user-agent": "RSILauncherEnhance_Gen/0.1" },
   });
   if (!response.ok) {
@@ -76,7 +126,25 @@ async function resolveInstallerUrl(downloadPage, explicitInstallerUrl) {
       `failed to read official RSI download page: HTTP ${response.status}`,
     );
   }
-  return discoverLauncherDownload(await response.text());
+  const pageContent = await response.text();
+  try {
+    return discoverLauncherDownload(pageContent);
+  } catch (error) {
+    if (!/does not contain downloadLink/.test(error.message)) throw error;
+  }
+
+  const baseUrl = discoverLauncherDownloadBaseUrl(pageContent);
+  const latestUrl = new URL("latest.json", `${baseUrl.replace(/\/+$/, "")}/`)
+    .href;
+  const latestResponse = await fetcher(latestUrl, {
+    headers: { "user-agent": "RSILauncherEnhance_Gen/0.1" },
+  });
+  if (!latestResponse.ok) {
+    throw new Error(
+      `failed to read official RSI launcher metadata: HTTP ${latestResponse.status}`,
+    );
+  }
+  return installerUrlFromLatestMetadata(baseUrl, await latestResponse.json());
 }
 
 async function sha256File(filePath) {
@@ -341,6 +409,9 @@ if (require.main === module) {
 
 module.exports = {
   discoverLauncherDownload,
+  discoverLauncherDownloadBaseUrl,
   installerFileNameFromUrl,
+  installerUrlFromLatestMetadata,
   launcherVersionFromUrl,
+  resolveInstallerUrl,
 };
