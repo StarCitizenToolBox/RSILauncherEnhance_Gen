@@ -216,6 +216,7 @@ discover: {
 download: {
     download_empty: "下载队列中没有下载任务。",
     download_phase: "阶段",
+    download_phase_create_sparse_file: "正在分配磁盘空间",
     download_phase_compute_size: "正在计算所需磁盘空间",
     download_phase_disk_space_check: "正在检查磁盘空间",
     download_phase_initial_download: "正在启动下载",
@@ -277,6 +278,10 @@ errors: {
     error_sign_in_offline_exit: "退出",
     error_sign_in_offline_retry: "重试",
     error_internal_error: "内部错误",
+    error_crash_title: "启动器遇到问题",
+    error_crash_content: "发生意外错误，启动器已停止。如果问题仍然存在，请在<0>问题理事会</0>报告。",
+    error_crash_restart: "重新启动启动器",
+    error_crash_quit: "退出",
     error_not_authenticated: "你未通过身份验证",
     error_invalid_claims: "无效声明",
     error_authentication_mfa: "身份验证需要mfa",

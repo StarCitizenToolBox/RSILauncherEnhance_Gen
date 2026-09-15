@@ -219,6 +219,7 @@ const SC_TOOLBOX_LOCALIZATION_ZHTW_MAP = {
             download: {
                 download_empty: "下載佇列中沒有下載任務。",
                 download_phase: "階段",
+                download_phase_create_sparse_file: "正在配置磁碟空間",
                 download_phase_compute_size: "正在計算所需空間",
                 download_phase_disk_space_check: "正在檢查磁碟空間",
                 download_phase_initial_download: "正在啟動下載",
@@ -282,6 +283,10 @@ const SC_TOOLBOX_LOCALIZATION_ZHTW_MAP = {
                 error_sign_in_offline_exit: "退出",
                 error_sign_in_offline_retry: "重新嘗試",
                 error_internal_error: "內部錯誤",
+                error_crash_title: "啟動器遇到問題",
+                error_crash_content: "發生意外錯誤，啟動器已停止。如果問題仍然存在，請在<0>問題與建議中心</0>回報。",
+                error_crash_restart: "重新啟動啟動器",
+                error_crash_quit: "退出",
                 error_not_authenticated: "您未通過身份驗證",
                 error_invalid_claims: "無效宣告",
                 error_authentication_mfa: "身份驗證需要mfa",
