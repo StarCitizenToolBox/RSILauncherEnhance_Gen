@@ -132,6 +132,27 @@ After edits, run `npm run finalize-agent`. It must pass before considering the p
 
 After finalizing, run `npm run verify-final` to check `../RSILauncherEnhance/main.js` without writing a second copy.
 
+`finalize-agent` performs an embedded `vm.Script` syntax check, but also run an independent
+Node parser check on both the readable bundle and the delivered output:
+
+```powershell
+node --check work/main.js
+node --check ../RSILauncherEnhance/main.js
+```
+
+For the automatic workflow, use the readable path recorded in `work/generated/meta.json` (normally
+`work/generated/main.js`) instead of `work/main.js`.
+
+Before finalizing, recursively compare `resources.en` from the unpatched `work/raw_main.js` against
+both source maps. Report every missing resource path and its English value as newly introduced
+launcher text. The `apply-patch` output reports the number of English fallbacks added for each map;
+any non-zero count must be reviewed rather than silently accepted. When the meaning is clear,
+add a translation to the corresponding source map and regenerate; do not treat an English
+fallback as completed Chinese localization. After finalizing, repeat the comparison against the embedded `SC_TOOLBOX_LOCALIZATION_ZHCN_MAP` and
+`SC_TOOLBOX_LOCALIZATION_ZHTW_MAP` in the final output; the missing count must be zero for both
+maps. If a new field cannot be translated from context, stop and ask the user instead of inventing
+wording.
+
 `finalize-agent` intentionally rejects raw/minified output. If it fails because the output does not look beautified, return to `work/main.js` and fix the readable patch instead of using `work/raw_main.js`.
 
 If verification fails, inspect `work/main.js` and fix the missing checklist item. Do not bypass verification.
